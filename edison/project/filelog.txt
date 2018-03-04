@@ -1,0 +1,15 @@
+Image C:\Documents and Settings\smittal\Desktop\Over the Merced.jpg loaded
+Input parameters:
+	Spatial Bandwidth	=    7
+	Color Bandwidth	=  6.5
+	Minimum Region	=   20
+timer start...
+done.
+Applying mean shift (Using Lattice) ... done.( 24.09 sec)
+Connecting regions         ...done. (  0.23 seconds, numRegions = 114327)
+Applying transitive closure...done. (  0.61 seconds, numRegions =  94879)
+Pruning spurious regions   ...done. (  0.47 seconds, numRegions =   4044)
+timer stop, elapsed 25.76 seconds.
+Filtered image saved to:	'C:\Documents and Settings\smittal\Desktop\Over the Merced_filt.pnm'.
+Segmented image saved to:	'C:\Documents and Settings\smittal\Desktop\Over the Merced_segm.pnm'.
+Boundaries saved to:	'C:\Documents and Settings\smittal\Desktop\Over the Merced_bndy.pnm'.
