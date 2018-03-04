@@ -1,0 +1,3 @@
+[submodule "segmentation_demo/thirdparty/cimg/CImg"]
+	path = segmentation_demo/thirdparty/cimg/CImg
+	url = https://github.com/dtschump/CImg

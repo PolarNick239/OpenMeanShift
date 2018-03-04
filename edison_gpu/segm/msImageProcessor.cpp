@@ -153,7 +153,7 @@ msImageProcessor::~msImageProcessor( void )
 /*        the image segmenter class to be segmented.   */
 /*******************************************************/
 
-void msImageProcessor::DefineImage(byte *data_, imageType type, int height_, int width_)
+void msImageProcessor::DefineImage(const byte *data_, imageType type, int height_, int width_)
 {
 
 	//obtain image dimension from image type
@@ -364,11 +364,13 @@ void msImageProcessor::Filter(int sigmaS, float sigmaR, SpeedUpLevel speedUpLeve
 	if(ErrorStatus == EL_ERROR)
 		return;
 
+#ifdef MSSYS_PROGRESS
 	//If the algorithm has been halted, then exit
 	if((ErrorStatus = msSys.Progress((float)(0.0))) == EL_HALT)
 	{
 		return;
 	}
+#endif
 	
 	//If the image has just been read then allocate memory
 	//for and initialize output data structure used to store
@@ -433,6 +435,7 @@ void msImageProcessor::Filter(int sigmaS, float sigmaR, SpeedUpLevel speedUpLeve
 
 	//*******************************************************
 
+#ifdef MSSYS_PROGRESS
 	//If the algorithm has been halted, then de-allocate the output
 	//and exit
 	if((ErrorStatus = msSys.Progress((float)(0.8))) == EL_HALT)
@@ -440,6 +443,7 @@ void msImageProcessor::Filter(int sigmaS, float sigmaR, SpeedUpLevel speedUpLeve
 		DestroyOutput();
 		return;
 	}
+#endif
 
 	//Label image regions, also if segmentation is not to be
 	//performed use the resulting classification structure to
@@ -526,6 +530,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 	if(ErrorStatus == EL_ERROR)
 		return;
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and exit
 	if((ErrorStatus = msSys.Progress((float)(0.8))) == EL_HALT)
@@ -533,6 +538,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 		if(class_state.OUTPUT_DEFINED)	DestroyOutput();
 		return;
 	}
+#endif
 
 	//obtain sigmaS (make sure it is not zero or negative, if not
 	//flag an error)
@@ -592,6 +598,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 		
 	}
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and exit
 	if((ErrorStatus = msSys.Progress((float)(0.85))) == EL_HALT)
@@ -599,6 +606,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 		DestroyOutput();
 		return;
 	}
+#endif
 
 #ifdef PROMPT
 	msSys.Prompt("Applying transitive closure...");
@@ -626,6 +634,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 	delete [] visitTable;
 	visitTable	= NULL;
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and region adjacency matrix and exit
 	if((ErrorStatus = msSys.Progress((float)(1.0))) == EL_HALT)
@@ -634,6 +643,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 		DestroyOutput();
 		return;
 	}
+#endif
 
 #ifdef PROMPT
 	double timer	= msSys.ElapsedTime();
@@ -651,6 +661,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 	msSys.StartTimer();
 #endif
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and region adjacency matrix and exit
 	if((ErrorStatus = msSys.Progress((float)(1.0))) == EL_HALT)
@@ -659,6 +670,7 @@ void msImageProcessor::FuseRegions(float sigmaS, int minRegion)
 		DestroyOutput();
 		return;
 	}
+#endif
 
 	//de-allocate memory for region adjacency matrix
 	DestroyRAM();
@@ -730,6 +742,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 	if(ErrorStatus == EL_HALT)
 		return;
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and exit
 	if((ErrorStatus = msSys.Progress((float)(0.85))) == EL_HALT)
@@ -737,6 +750,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 		DestroyOutput();
 		return;
 	}
+#endif
 
 #ifdef PROMPT
 	msSys.Prompt("Applying transitive closure...");
@@ -764,6 +778,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 	delete [] visitTable;
 	visitTable	= NULL;
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and regions adjacency matrix and exit
 	if((ErrorStatus = msSys.Progress((float)(0.95))) == EL_HALT)
@@ -772,6 +787,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 		DestroyOutput();
 		return;
 	}
+#endif
 
 #ifdef PROMPT
 	double timer	= msSys.ElapsedTime();
@@ -789,6 +805,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 	msSys.StartTimer();
 #endif
 
+#ifdef MSSYS_PROGRESS
 	//Check to see if the algorithm is to be halted, if so then
 	//destroy output and regions adjacency matrix and exit
 	if((ErrorStatus = msSys.Progress(1.0)) == EL_HALT)
@@ -797,6 +814,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 		DestroyOutput();
 		return;
 	}
+#endif
 
 	//de-allocate memory for region adjacency matrix
 	DestroyRAM();
@@ -841,7 +859,7 @@ void msImageProcessor::Segment(int sigmaS, float sigmaR, int minRegion, SpeedUpL
 /*        result has been stored in luvVal.            */
 /*******************************************************/
 
-void msImageProcessor::RGBtoLUV(byte *rgbVal, float *luvVal)
+void msImageProcessor::RGBtoLUV(const byte *rgbVal, float *luvVal)
 {
 
 	//delcare variables
@@ -1293,9 +1311,11 @@ void msImageProcessor::NonOptimizedFilter(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;
+#endif
 	}
 	
 	// Prompt user that filtering is completed
@@ -1577,9 +1597,11 @@ void msImageProcessor::OptimizedFilter1(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;		
+#endif
 	}
 	
 	// Prompt user that filtering is completed
@@ -1873,9 +1895,11 @@ void msImageProcessor::OptimizedFilter2(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;
+#endif
 		
 	}
 	
@@ -3783,9 +3807,11 @@ void msImageProcessor::NewOptimizedFilter1(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;		
+#endif
 	}
 	
 	// Prompt user that filtering is completed
@@ -4286,9 +4312,11 @@ void msImageProcessor::NewOptimizedFilter2(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;		
+#endif
 	}
 	
 	// Prompt user that filtering is completed
@@ -4639,9 +4667,11 @@ void msImageProcessor::NewNonOptimizedFilter(float sigmaS, float sigmaR)
 		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
 #endif
 	
+#ifdef MSSYS_PROGRESS
 		// Check to see if the algorithm has been halted
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;
+#endif
 	}
 	
 	// Prompt user that filtering is completed

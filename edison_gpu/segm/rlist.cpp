@@ -221,7 +221,7 @@ void RegionList::Reset( void )
 /*        list is returned.                            */
 /*******************************************************/
 
-int	RegionList::GetNumRegions( void )
+int	RegionList::GetNumRegions( void ) const
 {
 	// return region count
 	return numRegions;
@@ -240,7 +240,7 @@ int	RegionList::GetNumRegions( void )
 /*        specified by regionNum has been returned.    */
 /*******************************************************/
 
-int	RegionList::GetLabel(int regionNum)
+int	RegionList::GetLabel(int regionNum) const
 {
 	//return the label of a specified region
 	return regionList[regionNum].label;
@@ -260,7 +260,7 @@ int	RegionList::GetLabel(int regionNum)
 /*        is returned.                                 */
 /*******************************************************/
 
-int RegionList::GetRegionCount(int regionNum)
+int RegionList::GetRegionCount(int regionNum) const
 {
 	//return the region count of a specified region
 	return regionList[regionNum].pointCount;
@@ -281,6 +281,12 @@ int RegionList::GetRegionCount(int regionNum)
 /*******************************************************/
 
 int *RegionList::GetRegionIndeces(int regionNum)
+{
+	//return point indeces using regionNum
+	return &indexTable[regionList[regionNum].region];
+}
+
+const int *RegionList::GetRegionIndeces(int regionNum) const
 {
 	//return point indeces using regionNum
 	return &indexTable[regionList[regionNum].region];
@@ -317,7 +323,7 @@ int *RegionList::GetRegionIndeces(int regionNum)
 /*        the calling function.                        */
 /*******************************************************/
 
-void RegionList::ErrorHandler(char *functName, char* errmsg, ErrorType status)
+void RegionList::ErrorHandler(const char *functName, const char* errmsg, ErrorType status)
 {
 
 	//flag error message on behalf of calling function, error format
