@@ -421,8 +421,11 @@ void msImageProcessor::Filter(int sigmaS, float sigmaR, SpeedUpLevel speedUpLeve
 	  break;
 	//multithreaded speedup
 	case MULTITHREADED_SPEEDUP: 
-      //OptimizedFilter2((float)(sigmaS), sigmaR);		break;
       NewNonOptimizedFilter_omp((float)(sigmaS), sigmaR);
+	  break;
+	//OpenCL GPU speedup
+	case GPU_SPEEDUP: 
+      NewNonOptimizedFilter_gpu((float)(sigmaS), sigmaR);
 	  break;
    // new speedup
 	}

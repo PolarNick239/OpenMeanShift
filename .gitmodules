@@ -1,3 +1,6 @@
 [submodule "segmentation_demo/thirdparty/cimg/CImg"]
 	path = segmentation_demo/thirdparty/cimg/CImg
 	url = https://github.com/dtschump/CImg
+[submodule "edison_gpu/thirdparty/clew"]
+	path = edison_gpu/thirdparty/clew
+	url = https://github.com/martijnberger/clew

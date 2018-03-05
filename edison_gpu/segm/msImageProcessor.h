@@ -635,6 +635,7 @@ private:
    void NewNonOptimizedFilter(float, float);
 
 	void NewNonOptimizedFilter_omp(float, float); // Multithreaded version of NewNonOptimizedFilter
+	void NewNonOptimizedFilter_gpu(float, float); // OpenCL version of NewNonOptimizedFilter (the only difference is that calculations done in float, but not in double)
 
 	void OptimizedFilter1(float, float);	// filters the image using previous mode information
 											// to avoid re-applying mean shift to some data points

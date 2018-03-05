@@ -1,355 +1,301 @@
-void msImageProcessor::NewNonOptimizedFilter(float sigmaS, float sigmaR)
+#line 2
+
+// Required defines:
+//#define WORKGROUP_SIZE 256
+////#define N 1
+//#define N 3
+//#define EPSILON 0.01f
+//#define LIMIT 100
+
+#define lN (N + 2)
+
+#define MAX_NEIGHBOURS 27
+#define MAX_SAMPLES    64
+#define IDXDS_MAX      (MAX_NEIGHBOURS * MAX_SAMPLES)
+#define IDXDS_EMPTY    INT_MAX
+
+#if 0
+#define assert(expression) if (!(expression)) printf("Assertion failed at line %d!", __LINE__);
+#else
+#define assert(expression) 
+#endif
+
+inline int getBucNeigh(const int j, const int nBuck1, const int nBuck2)
 {
+    return ((j / 9) % 3 - 1) + nBuck1 * (((j / 3) % 3 - 1) + nBuck2 * (j % 3 - 1));
+// Equal to:
+//    idxd = 0;
+//    for (cBuck1=-1; cBuck1<=1; cBuck1++)
+//        for (cBuck2=-1; cBuck2<=1; cBuck2++)
+//            for (cBuck3=-1; cBuck3<=1; cBuck3++)
+//                bucNeigh[idxd++] = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
+//    return bucNeigh[j];
+}
 
-	// Declare Variables
-	int   iterationCount, i, j, k;
-	double mvAbs, diff, el;
-	
-	//make sure that a lattice height and width have
-	//been defined...
-	if(!height)
-	{
-		ErrorHandler("msImageProcessor", "LFilter", "Lattice height and width are undefined.");
-		return;
-	}
+__kernel void meanShiftFilter(__global const float* sdata,     // lN*L
+                              __global const int*   buckets,   // nBuck1*nBuck2*nBuck3
+                              __global const float* weightMap, // L
+                              __global const int*   slist,     // L
+                              __global       float* msRawData, // N*L
+                              const int L,
+                              const int width, const int height,
+                              const float sigmaS, const float sigmaR,
+                              const float sMins,
+                              const int nBuck1, const int nBuck2, const int nBuck3
+)
+{
+    __local int    idxds[IDXDS_MAX];
+    __local float* cache = (__local float*) idxds;
+    assert (WORKGROUP_SIZE * (lN + 1) <= IDXDS_MAX);
 
-	//re-assign bandwidths to sigmaS and sigmaR
-	if(((h[0] = sigmaS) <= 0)||((h[1] = sigmaR) <= 0))
-	{
-		ErrorHandler("msImageProcessor", "Segment", "sigmaS and/or sigmaR is zero or negative.");
-		return;
-	}
-	
-	//define input data dimension with lattice
-	int lN	= N + 2;
-	
-	// Traverse each data point applying mean shift
-	// to each data point
-	
-	// Allcocate memory for yk
-	double	*yk		= new double [lN];
-	
-	// Allocate memory for Mh
-	double	*Mh		= new double [lN];
+    const int i = get_global_id(0);
+    const int threadY = get_local_id(1);
+    const int thread0 = 0;
 
-   // let's use some temporary data
-   double* sdata;
-   sdata = new double[lN*L];
+    const float hiLTr = 80.0f / sigmaR;
 
-   // copy the scaled data
-   int idxs, idxd;
-   idxs = idxd = 0;
-   if (N==3)
-   {
-      for(i=0; i<L; i++)
-      {
-         sdata[idxs++] = (i%width)/sigmaS;
-         sdata[idxs++] = (i/width)/sigmaS;
-         sdata[idxs++] = data[idxd++]/sigmaR;
-         sdata[idxs++] = data[idxd++]/sigmaR;
-         sdata[idxs++] = data[idxd++]/sigmaR;
-      }
-   } else if (N==1)
-   {
-      for(i=0; i<L; i++)
-      {
-         sdata[idxs++] = (i%width)/sigmaS;
-         sdata[idxs++] = (i/width)/sigmaS;
-         sdata[idxs++] = data[idxd++]/sigmaR;
-      }
-   } else
-   {
-      for(i=0; i<L; i++)
-      {
-         sdata[idxs++] = (i%width)/sigmaS;
-         sdata[idxs++] = (i%width)/sigmaS;
-         for (j=0; j<N; j++)
-            sdata[idxs++] = data[idxd++]/sigmaR;
-      }
-   }
-   // index the data in the 3d buckets (x, y, L)
-   int* buckets;
-   int* slist;
-   slist = new int[L];
-   int bucNeigh[27];
+    float yk[lN];
+    float Mh[lN];
+    float wsuml;
 
-   double sMins; // just for L
-   double sMaxs[3]; // for all
-   sMaxs[0] = width/sigmaS;
-   sMaxs[1] = height/sigmaS;
-   sMins = sMaxs[2] = sdata[2];
-   idxs = 2;
-   double cval;
-   for(i=0; i<L; i++)
-   {
-      cval = sdata[idxs];
-      if (cval < sMins)
-         sMins = cval;
-      else if (cval > sMaxs[2])
-         sMaxs[2] = cval;
+    // Assign window center (window centers are
+    // initialized by createLattice to be the point
+    // data[i])
+    for (int j = 0; j < lN; j++)
+        yk[j] = sdata[i * lN + j];
 
-      idxs += lN;
-   }
+    // Calculate the mean shift vector using the lattice
+    // LatticeMSVector(Mh, yk);
+    /*****************************************************/
+    // Initialize mean shift vector
+    for (int k = 0; k < lN; ++k)
+        Mh[k] = 0.0f;
+    wsuml = 0.0f;
 
-   int nBuck1, nBuck2, nBuck3;
-   int cBuck1, cBuck2, cBuck3, cBuck;
-   nBuck1 = (int) (sMaxs[0] + 3);
-   nBuck2 = (int) (sMaxs[1] + 3);
-   nBuck3 = (int) (sMaxs[2] - sMins + 3);
-   buckets = new int[nBuck1*nBuck2*nBuck3];
-   for(i=0; i<(nBuck1*nBuck2*nBuck3); i++)
-      buckets[i] = -1;
-
-   idxs = 0;
-   for(i=0; i<L; i++)
-   {
-      // find bucket for current data and add it to the list
-      cBuck1 = (int) sdata[idxs] + 1;
-      cBuck2 = (int) sdata[idxs+1] + 1;
-      cBuck3 = (int) (sdata[idxs+2] - sMins) + 1;
-      cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-
-      slist[i] = buckets[cBuck];
-      buckets[cBuck] = i;
-
-      idxs += lN;
-   }
-   // init bucNeigh
-   idxd = 0;
-   for (cBuck1=-1; cBuck1<=1; cBuck1++)
-   {
-      for (cBuck2=-1; cBuck2<=1; cBuck2++)
-      {
-         for (cBuck3=-1; cBuck3<=1; cBuck3++)
-         {
-            bucNeigh[idxd++] = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-         }
-      }
-   }
-   double wsuml, weight;
-   double hiLTr = 80.0/sigmaR;
-   // done indexing/hashing
-	
-	// proceed ...
-#ifdef PROMPT
-	msSys.Prompt("done.\nApplying mean shift (Using Lattice)... ");
-#ifdef SHOW_PROGRESS
-	msSys.Prompt("\n 0%%");
-#endif
-#endif
-
-	for(i = 0; i < L; i++)
-	{
-
-		// Assign window center (window centers are
-		// initialized by createLattice to be the point
-		// data[i])
-      idxs = i*lN;
-      for (j=0; j<lN; j++)
-         yk[j] = sdata[idxs+j];
-		
-		// Calculate the mean shift vector using the lattice
-		// LatticeMSVector(Mh, yk);
-      /*****************************************************/
-   	// Initialize mean shift vector
-	   for(j = 0; j < lN; j++)
-   		Mh[j] = 0;
-   	wsuml = 0;
-      // uniformLSearch(Mh, yk_ptr); // modify to new
-      // find bucket of yk
-      cBuck1 = (int) yk[0] + 1;
-      cBuck2 = (int) yk[1] + 1;
-      cBuck3 = (int) (yk[2] - sMins) + 1;
-      cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-      for (j=0; j<27; j++)
-      {
-         idxd = buckets[cBuck+bucNeigh[j]];
-         // list parse, crt point is cHeadList
-         while (idxd>=0)
-         {
-            idxs = lN*idxd;
-            // determine if inside search window
-            el = sdata[idxs+0]-yk[0];
-            diff = el*el;
-            el = sdata[idxs+1]-yk[1];
-            diff += el*el;
-
-            if (diff < 1.0)
-            {
-               el = sdata[idxs+2]-yk[2];
-               if (yk[2] > hiLTr)
-                  diff = 4*el*el;
-               else
-                  diff = el*el;
-
-               if (N>1)
-               {
-                  el = sdata[idxs+3]-yk[3];
-                  diff += el*el;
-                  el = sdata[idxs+4]-yk[4];
-                  diff += el*el;
-               }
-
-               if (diff < 1.0)
-               {
-                  weight = 1-weightMap[idxd];
-                  for (k=0; k<lN; k++)
-                     Mh[k] += weight*sdata[idxs+k];
-                  wsuml += weight;
-               }
-            }
+    if (threadY < MAX_NEIGHBOURS) {
+        int j = threadY;
+        int cBuck;
+        {
+            int cBuck1 = (int) yk[0] + 1;
+            int cBuck2 = (int) yk[1] + 1;
+            int cBuck3 = (int) (yk[2] - sMins) + 1;
+            cBuck = cBuck1 + nBuck1 * (cBuck2 + nBuck2 * cBuck3);
+        }
+        int bucketId = cBuck + getBucNeigh(j, nBuck1, nBuck2);
+        int idxd = buckets[bucketId];
+        // list parse, crt point is cHeadList
+        int k = 0;
+        for (; k < MAX_SAMPLES && idxd >= 0; ++k) {
+            idxds[j * MAX_SAMPLES + k] = idxd;
             idxd = slist[idxd];
-         }
-      }
-   	if (wsuml > 0)
-   	{
-		   for(j = 0; j < lN; j++)
-   			Mh[j] = Mh[j]/wsuml - yk[j];
-   	}
-   	else
-   	{
-		   for(j = 0; j < lN; j++)
-   			Mh[j] = 0;
-   	}
-      /*****************************************************/
-		
-		// Calculate its magnitude squared
-		mvAbs = 0;
-		for(j = 0; j < lN; j++)
-			mvAbs += Mh[j]*Mh[j];
-		
-		// Keep shifting window center until the magnitude squared of the
-		// mean shift vector calculated at the window center location is
-		// under a specified threshold (Epsilon)
-		
-		// NOTE: iteration count is for speed up purposes only - it
-		//       does not have any theoretical importance
-		iterationCount = 1;
-		while((mvAbs >= EPSILON)&&(iterationCount < LIMIT))
-		{
-			
-			// Shift window location
-			for(j = 0; j < lN; j++)
-				yk[j] += Mh[j];
-			
-			// Calculate the mean shift vector at the new
-			// window location using lattice
-			// LatticeMSVector(Mh, yk);
-         /*****************************************************/
-         // Initialize mean shift vector
-         for(j = 0; j < lN; j++)
-            Mh[j] = 0;
-         wsuml = 0;
-         // uniformLSearch(Mh, yk_ptr); // modify to new
-         // find bucket of yk
-         cBuck1 = (int) yk[0] + 1;
-         cBuck2 = (int) yk[1] + 1;
-         cBuck3 = (int) (yk[2] - sMins) + 1;
-         cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-         for (j=0; j<27; j++)
-         {
-            idxd = buckets[cBuck+bucNeigh[j]];
-            // list parse, crt point is cHeadList
-            while (idxd>=0)
-            {
-               idxs = lN*idxd;
-               // determine if inside search window
-               el = sdata[idxs+0]-yk[0];
-               diff = el*el;
-               el = sdata[idxs+1]-yk[1];
-               diff += el*el;
-               
-               if (diff < 1.0)
-               {
-                  el = sdata[idxs+2]-yk[2];
-                  if (yk[2] > hiLTr)
-                     diff = 4*el*el;
-                  else
-                     diff = el*el;
-                  
-                  if (N>1)
-                  {
-                     el = sdata[idxs+3]-yk[3];
-                     diff += el*el;
-                     el = sdata[idxs+4]-yk[4];
-                     diff += el*el;
-                  }
-                  
-                  if (diff < 1.0)
-                  {
-                     weight = 1-weightMap[idxd];
-                     for (k=0; k<lN; k++)
-                        Mh[k] += weight*sdata[idxs+k];
-                     wsuml += weight;
-                  }
-               }
-               idxd = slist[idxd];
+        }
+        for (; k < MAX_SAMPLES; ++k) {
+            idxds[j * MAX_SAMPLES + k] = IDXDS_EMPTY;
+        }
+        assert(idxd < 0);
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (int j = threadY; j < IDXDS_MAX; j += WORKGROUP_SIZE) {
+        int idxd = idxds[j];
+        if (idxd != IDXDS_EMPTY) {
+            int idxs = lN * idxd;
+            // determine if inside search window
+
+            float el, diff;
+            el = sdata[idxs + 0] - yk[0];
+            diff = el * el;
+            el = sdata[idxs + 1] - yk[1];
+            diff += el * el;
+
+            if (diff < 1.0f) {
+                el = sdata[idxs + 2] - yk[2];
+                if (yk[2] > hiLTr)
+                    diff = 4.0f * el * el;
+                else
+                    diff = el * el;
+
+#if (N == 3)
+                {
+                    el = sdata[idxs + 3] - yk[3];
+                    diff += el * el;
+                    el = sdata[idxs + 4] - yk[4];
+                    diff += el * el;
+                }
+#endif
+
+                if (diff < 1.0f) {
+                    float weight = 1.0f - weightMap[idxd];
+                    for (int k = 0; k < lN; ++k)
+                        Mh[k] += weight * sdata[idxs + k];
+                    wsuml += weight;
+                }
             }
-         }
-         if (wsuml > 0)
-         {
-            for(j = 0; j < lN; j++)
-               Mh[j] = Mh[j]/wsuml - yk[j];
-         }
-         else
-         {
-            for(j = 0; j < lN; j++)
-               Mh[j] = 0;
-         }
-         /*****************************************************/
-			
-			// Calculate its magnitude squared
-			//mvAbs = 0;
-			//for(j = 0; j < lN; j++)
-			//	mvAbs += Mh[j]*Mh[j];
-         mvAbs = (Mh[0]*Mh[0]+Mh[1]*Mh[1])*sigmaS*sigmaS;
-         if (N==3)
-            mvAbs += (Mh[2]*Mh[2]+Mh[3]*Mh[3]+Mh[4]*Mh[4])*sigmaR*sigmaR;
-         else
-            mvAbs += Mh[2]*Mh[2]*sigmaR*sigmaR;
+        }
+    }
 
-			// Increment interation count
-			iterationCount++;
-		}
+    {
+        barrier(CLK_LOCAL_MEM_FENCE);
 
-		// Shift window location
-		for(j = 0; j < lN; j++)
-			yk[j] += Mh[j];
-		
-		//store result into msRawData...
-		for(j = 0; j < N; j++)
-			msRawData[N*i+j] = (float)(yk[j+2]*sigmaR);
+        for (int k = 0; k < lN; ++k)
+            cache[threadY * (lN + 1) + k] = Mh[k];
+        cache[threadY * (lN + 1) + lN] = wsuml;
 
-		// Prompt user on progress
-#ifdef SHOW_PROGRESS
-		percent_complete = (float)(i/(float)(L))*100;
-		msSys.Prompt("\r%2d%%", (int)(percent_complete + 0.5));
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (int k = 0; k < lN; ++k)
+            Mh[k] = 0.0f;
+        wsuml = 0.0f;
+        for (int j = 0; j < WORKGROUP_SIZE; ++j) {
+            for (int k = 0; k < lN; ++k)
+                Mh[k] += cache[j * (lN + 1) + k];
+            wsuml += cache[j * (lN + 1) + lN];
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        if (wsuml > 0) {
+            for (int j = 0; j < lN; j++)
+                Mh[j] = Mh[j] / wsuml - yk[j];
+        } else {
+            for (int j = 0; j < lN; j++)
+                Mh[j] = 0.0f;
+        }
+    }
+    /*****************************************************/
+    // Calculate its magnitude squared
+    float mvAbs = 0.0f;
+    for (int j = 0; j < lN; j++)
+        mvAbs += Mh[j] * Mh[j];
+
+    // Keep shifting window center until the magnitude squared of the
+    // mean shift vector calculated at the window center location is
+    // under a specified threshold (Epsilon)
+
+    // NOTE: iteration count is for speed up purposes only - it
+    //       does not have any theoretical importance
+    for (int iterationCount = 1; (mvAbs >= EPSILON) && (iterationCount < LIMIT); ++iterationCount) {
+
+        // Shift window location
+        for (int j = 0; j < lN; j++)
+            yk[j] += Mh[j];
+
+        // Calculate the mean shift vector at the new
+        // window location using lattice
+        // LatticeMSVector(Mh, yk);
+        /*****************************************************/
+        // Initialize mean shift vector
+        for (int j = 0; j < lN; j++)
+            Mh[j] = 0.0f;
+        wsuml = 0.0f;
+
+        if (threadY < MAX_NEIGHBOURS) {
+            int j = threadY;
+            int cBuck;
+            {
+                int cBuck1 = (int) yk[0] + 1;
+                int cBuck2 = (int) yk[1] + 1;
+                int cBuck3 = (int) (yk[2] - sMins) + 1;
+                cBuck = cBuck1 + nBuck1 * (cBuck2 + nBuck2 * cBuck3);
+            }
+            int bucketId = cBuck + getBucNeigh(j, nBuck1, nBuck2);
+            int idxd = buckets[bucketId];
+            // list parse, crt point is cHeadList
+            int k = 0;
+            for (; k < MAX_SAMPLES && idxd >= 0; ++k) {
+                idxds[j * MAX_SAMPLES + k] = idxd;
+                idxd = slist[idxd];
+            }
+            for (; k < MAX_SAMPLES; ++k) {
+                idxds[j * MAX_SAMPLES + k] = IDXDS_EMPTY;
+            }
+            assert(idxd < 0);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (int j = threadY; j < IDXDS_MAX; j += WORKGROUP_SIZE) {
+            int idxd = idxds[j];
+            // list parse, crt point is cHeadList
+            if (idxd != IDXDS_EMPTY) {
+                int idxs = lN * idxd;
+                // determine if inside search window
+                float el, diff;
+                el = sdata[idxs + 0] - yk[0];
+                diff = el * el;
+                el = sdata[idxs + 1] - yk[1];
+                diff += el * el;
+
+                if (diff < 1.0f) {
+                    el = sdata[idxs + 2] - yk[2];
+                    if (yk[2] > hiLTr)
+                        diff = 4.0f * el * el;
+                    else
+                        diff = el * el;
+
+#if (N == 3)
+                    {
+                        el = sdata[idxs + 3] - yk[3];
+                        diff += el * el;
+                        el = sdata[idxs + 4] - yk[4];
+                        diff += el * el;
+                    }
 #endif
-	
-#ifdef MSSYS_PROGRESS
-		// Check to see if the algorithm has been halted
-		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
-			break;
-#endif
-	}
-	
-	// Prompt user that filtering is completed
-#ifdef PROMPT
-#ifdef SHOW_PROGRESS
-	msSys.Prompt("\r");
-#endif
-	msSys.Prompt("done.");
-#endif
-	
-	// de-allocate memory
-   delete [] buckets;
-   delete [] slist;
-   delete [] sdata;
 
-	delete [] yk;
-	delete [] Mh;
+                    if (diff < 1.0f) {
+                        float weight = 1.0f - weightMap[idxd];
+                        for (int k = 0; k < lN; k++)
+                            Mh[k] += weight * sdata[idxs + k];
+                        wsuml += weight;
+                    }
+                }
+            }
+        }
 
-	// done.
-	return;
+        barrier(CLK_LOCAL_MEM_FENCE);
 
+        for (int k = 0; k < lN; ++k)
+            cache[threadY * (lN + 1) + k] = Mh[k];
+        cache[threadY * (lN + 1) + lN] = wsuml;
+
+        {
+            barrier(CLK_LOCAL_MEM_FENCE);
+
+            for (int k = 0; k < lN; ++k)
+                Mh[k] = 0.0f;
+            wsuml = 0.0f;
+            for (int j = 0; j < WORKGROUP_SIZE; ++j) {
+                for (int k = 0; k < lN; ++k)
+                    Mh[k] += cache[j * (lN + 1) + k];
+                wsuml += cache[j * (lN + 1) + lN];
+            }
+
+            barrier(CLK_LOCAL_MEM_FENCE);
+
+            if (wsuml > 0) {
+                for (int j = 0; j < lN; j++)
+                    Mh[j] = Mh[j] / wsuml - yk[j];
+            } else {
+                for (int j = 0; j < lN; j++)
+                    Mh[j] = 0.0f;
+            }
+        }
+        /*****************************************************/
+
+        // Calculate its magnitude squared
+        mvAbs = (Mh[0] * Mh[0] + Mh[1] * Mh[1]) * sigmaS * sigmaS;
+        if (N == 3)
+            mvAbs += (Mh[2] * Mh[2] + Mh[3] * Mh[3] + Mh[4] * Mh[4]) * sigmaR * sigmaR;
+        else
+            mvAbs += Mh[2] * Mh[2] * sigmaR * sigmaR;
+    }
+
+    // Shift window location
+    for (int j = 0; j < lN; j++)
+        yk[j] += Mh[j];
+
+    //store result into msRawData...
+    if (threadY < N) {
+        int j = threadY;
+        msRawData[N * i + j] = (float) (yk[j + 2] * sigmaR);
+    }
 }
