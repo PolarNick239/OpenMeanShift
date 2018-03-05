@@ -419,6 +419,11 @@ void msImageProcessor::Filter(int sigmaS, float sigmaR, SpeedUpLevel speedUpLeve
       //OptimizedFilter2((float)(sigmaS), sigmaR);		break;
       NewOptimizedFilter2((float)(sigmaS), sigmaR);		
 	  break;
+	//multithreaded speedup
+	case MULTITHREADED_SPEEDUP: 
+      //OptimizedFilter2((float)(sigmaS), sigmaR);		break;
+      NewNonOptimizedFilter_omp((float)(sigmaS), sigmaR);
+	  break;
    // new speedup
 	}
 

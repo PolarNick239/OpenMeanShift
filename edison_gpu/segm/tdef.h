@@ -42,7 +42,7 @@ enum kernelType		{Uniform, Gaussian, UserDefined};
 enum childType		{LEFT, RIGHT};
 
 // Speed Up Level
-enum SpeedUpLevel	{NO_SPEEDUP, MED_SPEEDUP, HIGH_SPEEDUP};
+enum SpeedUpLevel	{NO_SPEEDUP, MED_SPEEDUP, HIGH_SPEEDUP, MULTITHREADED_SPEEDUP};
 
 // Error Handler
 enum ErrorLevel		{EL_OKAY, EL_ERROR, EL_HALT};

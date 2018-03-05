@@ -634,6 +634,8 @@ private:
 											// Disadvantage	: time expensive
    void NewNonOptimizedFilter(float, float);
 
+	void NewNonOptimizedFilter_omp(float, float); // Multithreaded version of NewNonOptimizedFilter
+
 	void OptimizedFilter1(float, float);	// filters the image using previous mode information
 											// to avoid re-applying mean shift to some data points
 											// Advantage	: maintains high level of accuracy,

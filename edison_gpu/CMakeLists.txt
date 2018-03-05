@@ -13,6 +13,7 @@ set(HEADERS
 )
 
 set(SOURCES
+        src/ms_filter_multithreaded.cpp
         src/mean_shift.cpp
         segm/ms.cpp
         segm/msImageProcessor.cpp
