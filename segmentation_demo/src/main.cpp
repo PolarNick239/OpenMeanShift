@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     int sigmaS = 8;
     int sigmaR = 5;
     int minArea = 200;
-    SpeedUpLevel speedupLevel = NO_SPEEDUP;
+    SpeedUpLevel speedupLevel = MULTITHREADED_SPEEDUP;
 
     if (argc != 3) {
         std::cout << "Usage: " << argv[0] << " <inputImageFilename> <outputImageFilename>" << std::endl;

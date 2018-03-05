@@ -1,12 +1,12 @@
 #include "../segm/msImageProcessor.h"
 
+#include <cassert>
+
+typedef double real_type;
+
 void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 {
 
-	// Declare Variables
-	int   iterationCount, i, j, k;
-	double mvAbs, diff, el;
-	
 	//make sure that a lattice height and width have
 	//been defined...
 	if(!height)
@@ -27,23 +27,17 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 	
 	// Traverse each data point applying mean shift
 	// to each data point
-	
-	// Allcocate memory for yk
-	double	*yk		= new double [lN];
-	
-	// Allocate memory for Mh
-	double	*Mh		= new double [lN];
 
    // let's use some temporary data
-   double* sdata;
-   sdata = new double[lN*L];
+   real_type* sdata;
+   sdata = new real_type[lN*L];
 
    // copy the scaled data
    int idxs, idxd;
    idxs = idxd = 0;
    if (N==3)
    {
-      for(i=0; i<L; i++)
+      for(int i=0; i<L; i++)
       {
          sdata[idxs++] = (i%width)/sigmaS;
          sdata[idxs++] = (i/width)/sigmaS;
@@ -53,7 +47,7 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
       }
    } else if (N==1)
    {
-      for(i=0; i<L; i++)
+      for(int i=0; i<L; i++)
       {
          sdata[idxs++] = (i%width)/sigmaS;
          sdata[idxs++] = (i/width)/sigmaS;
@@ -61,11 +55,11 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
       }
    } else
    {
-      for(i=0; i<L; i++)
+      for(int i=0; i<L; i++)
       {
          sdata[idxs++] = (i%width)/sigmaS;
          sdata[idxs++] = (i%width)/sigmaS;
-         for (j=0; j<N; j++)
+         for (int j=0; j<N; j++)
             sdata[idxs++] = data[idxd++]/sigmaR;
       }
    }
@@ -75,14 +69,14 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
    slist = new int[L];
    int bucNeigh[27];
 
-   double sMins; // just for L
-   double sMaxs[3]; // for all
+   real_type sMins; // just for L
+   real_type sMaxs[3]; // for all
    sMaxs[0] = width/sigmaS;
    sMaxs[1] = height/sigmaS;
    sMins = sMaxs[2] = sdata[2];
    idxs = 2;
-   double cval;
-   for(i=0; i<L; i++)
+   real_type cval;
+   for(int i=0; i<L; i++)
    {
       cval = sdata[idxs];
       if (cval < sMins)
@@ -93,17 +87,16 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
       idxs += lN;
    }
 
-   int nBuck1, nBuck2, nBuck3;
    int cBuck1, cBuck2, cBuck3, cBuck;
-   nBuck1 = (int) (sMaxs[0] + 3);
-   nBuck2 = (int) (sMaxs[1] + 3);
-   nBuck3 = (int) (sMaxs[2] - sMins + 3);
+   const int nBuck1 = (int) (sMaxs[0] + 3);
+   const int nBuck2 = (int) (sMaxs[1] + 3);
+   const int nBuck3 = (int) (sMaxs[2] - sMins + 3);
    buckets = new int[nBuck1*nBuck2*nBuck3];
-   for(i=0; i<(nBuck1*nBuck2*nBuck3); i++)
+   for(int i=0; i<(nBuck1*nBuck2*nBuck3); i++)
       buckets[i] = -1;
 
    idxs = 0;
-   for(i=0; i<L; i++)
+   for(int i=0; i<L; i++)
    {
       // find bucket for current data and add it to the list
       cBuck1 = (int) sdata[idxs] + 1;
@@ -128,8 +121,7 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
          }
       }
    }
-   double wsuml, weight;
-   double hiLTr = 80.0/sigmaR;
+   real_type hiLTr = 80.0/sigmaR;
    // done indexing/hashing
 	
 	// proceed ...
@@ -140,8 +132,22 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 #endif
 #endif
 
-	for(i = 0; i < L; i++)
+	#pragma omp parallel for schedule(dynamic, 4)
+	for(int i = 0; i < L; i++)
 	{
+		int idxs, idxd;
+		int j, k;
+		int iterationCount;
+
+		int cBuck1, cBuck2, cBuck3, cBuck;
+
+		assert (lN <= 5);
+		real_type yk[5];
+		real_type Mh[5];
+
+		real_type wsuml;
+		real_type mvAbs, diff, el;
+		real_type weight;
 
 		// Assign window center (window centers are
 		// initialized by createLattice to be the point
@@ -347,9 +353,6 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
    delete [] buckets;
    delete [] slist;
    delete [] sdata;
-
-	delete [] yk;
-	delete [] Mh;
 
 	// done.
 	return;
