@@ -27,10 +27,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 function(convertIntoHeader sourceFile headerFile arrayName)
     add_custom_command(
-            OUTPUT ${headerFile}
+            OUTPUT ${PROJECT_SOURCE_DIR}/${headerFile}
 
-            COMMAND xxd -ps ${PROJECT_SOURCE_DIR}/${sourceFile} | fold -w2 | paste -sd' '| sed -e 's/ /, 0x/g' | printf \"0x$$\(cat -\)\" | fold -w120 | printf \"static const char ${arrayName}[] = {\\n$$\(cat -\)}\$<SEMICOLON>\\n\\nsize_t ${arrayName}_length = sizeof\(${arrayName}\) / sizeof\(unsigned char\)$<SEMICOLON>\\n\" > ${PROJECT_SOURCE_DIR}/${headerFile}
+            COMMAND xxd -ps ${PROJECT_SOURCE_DIR}/${sourceFile} | fold -w2 | paste -sd' '| sed -e 's/ /, 0x/g' | printf \"0x$$\(cat -\)\" | fold -w120 | printf \"\#include <cstddef>\\n\\nstatic const char ${arrayName}[] = {\\n$$\(cat -\)}\$<SEMICOLON>\\n\\nsize_t ${arrayName}_length = sizeof\(${arrayName}\) / sizeof\(unsigned char\)$<SEMICOLON>\\n\" > ${PROJECT_SOURCE_DIR}/${headerFile}
 
-            DEPENDS ${sourceFile}
+            DEPENDS ${PROJECT_SOURCE_DIR}/${sourceFile}
     )
 endfunction()

@@ -143,14 +143,21 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        for (int k = 0; k < lN; ++k)
-            Mh[k] = 0.0f;
-        wsuml = 0.0f;
-        for (int j = 0; j < WORKGROUP_SIZE; ++j) {
-            for (int k = 0; k < lN; ++k)
-                Mh[k] += cache[j * (lN + 1) + k];
-            wsuml += cache[j * (lN + 1) + lN];
+        int step = WORKGROUP_SIZE / 2;
+        while (step > 0) {
+            if (threadY < step) {
+                for (int k = 0;  k < lN; ++k)
+                    cache[threadY * (lN + 1) + k] += cache[(threadY + step) * (lN + 1) + k];
+                cache[threadY * (lN + 1) + lN] += cache[(threadY + step) * (lN + 1) + lN];
+            }
+
+            step /= 2;
+            barrier(CLK_LOCAL_MEM_FENCE);
         }
+
+        for (int k = 0; k < lN; ++k)
+            Mh[k] = cache[thread0 * (lN + 1) + k];
+        wsuml = cache[thread0 * (lN + 1) + lN];
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -251,23 +258,30 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
             }
         }
 
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        for (int k = 0; k < lN; ++k)
-            cache[threadY * (lN + 1) + k] = Mh[k];
-        cache[threadY * (lN + 1) + lN] = wsuml;
-
         {
             barrier(CLK_LOCAL_MEM_FENCE);
 
             for (int k = 0; k < lN; ++k)
-                Mh[k] = 0.0f;
-            wsuml = 0.0f;
-            for (int j = 0; j < WORKGROUP_SIZE; ++j) {
-                for (int k = 0; k < lN; ++k)
-                    Mh[k] += cache[j * (lN + 1) + k];
-                wsuml += cache[j * (lN + 1) + lN];
+                cache[threadY * (lN + 1) + k] = Mh[k];
+            cache[threadY * (lN + 1) + lN] = wsuml;
+
+            barrier(CLK_LOCAL_MEM_FENCE);
+
+            int step = WORKGROUP_SIZE / 2;
+            while (step > 0) {
+                if (threadY < step) {
+                    for (int k = 0; k < lN; ++k)
+                        cache[threadY * (lN + 1) + k] += cache[(threadY + step) * (lN + 1) + k];
+                    cache[threadY * (lN + 1) + lN] += cache[(threadY + step) * (lN + 1) + lN];
+                }
+
+                step /= 2;
+                barrier(CLK_LOCAL_MEM_FENCE);
             }
+
+            for (int k = 0; k < lN; ++k)
+                Mh[k] = cache[thread0 * (lN + 1) + k];
+            wsuml = cache[thread0 * (lN + 1) + lN];
 
             barrier(CLK_LOCAL_MEM_FENCE);
 
