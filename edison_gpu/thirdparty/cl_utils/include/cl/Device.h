@@ -34,6 +34,8 @@ namespace cl {
         const size_t            max_clock_freq;
         const size_t            max_compute_units;
 
+        const size_t            wavefront_size;
+
         const std::set<std::string> extensions;
 
         const Platform_ptr      platform;
@@ -43,7 +45,7 @@ namespace cl {
         Device(const std::string &name, const std::string &vendor, const unsigned int vendor_id,
                const Version &device_version, const Version &driver_version, const size_t global_mem_size,
                const size_t max_mem_alloc_size, const size_t local_mem_size, const size_t max_work_group_size,
-               const size_t max_clock_freq, const size_t max_compute_units, const Platform_ptr &platform,
+               const size_t max_clock_freq, const size_t max_compute_units, const size_t wavefront_size, const Platform_ptr &platform,
                const cl_device_id device_id, const std::set<std::string> &extensions) :
                                                name(name), vendor(vendor), vendor_id(vendor_id),
                                                device_version(device_version), driver_version(driver_version),
@@ -51,6 +53,7 @@ namespace cl {
                                                max_mem_alloc_size(max_mem_alloc_size), local_mem_size(local_mem_size),
                                                max_work_group_size(max_work_group_size),
                                                max_clock_freq(max_clock_freq), max_compute_units(max_compute_units),
+                                               wavefront_size(wavefront_size),
                                                extensions(extensions),
                                                platform(platform), device_id(device_id) { }
 

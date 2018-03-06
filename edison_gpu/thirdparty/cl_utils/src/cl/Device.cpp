@@ -42,7 +42,7 @@ Device_ptr cl::createDevice(Platform_ptr platform, cl_device_id device_id) {
     unsigned int vendor_id;
     cl_ulong global_mem_size, max_mem_alloc_size, local_mem_size;
     size_t max_work_group_size;
-    cl_uint max_clock_freq, max_compute_units;
+    cl_uint max_clock_freq, max_compute_units, wavefront_size;
 
     getDeviceInfoString(device_id, CL_DEVICE_NAME, name);
     getDeviceInfoString(device_id, CL_DEVICE_VENDOR, vendor);
@@ -88,10 +88,20 @@ Device_ptr cl::createDevice(Platform_ptr platform, cl_device_id device_id) {
         }
     }
 
+    if (extensions_set.count("cl_amd_device_attribute_query")) {
+        #define CL_DEVICE_WAVEFRONT_WIDTH_AMD 0x4043
+        CHECKED_NULL(clGetDeviceInfo(device_id, CL_DEVICE_WAVEFRONT_WIDTH_AMD, sizeof(cl_uint), &wavefront_size, NULL));
+    } else if (extensions_set.count("cl_nv_device_attribute_query")) {
+        #define CL_DEVICE_WARP_SIZE_NV 0x4003
+        CHECKED_NULL(clGetDeviceInfo(device_id, CL_DEVICE_WARP_SIZE_NV, sizeof(cl_uint), &wavefront_size, NULL));
+    } else {
+        wavefront_size = 1;
+    }
+
     return Device_ptr(new Device(name, vendor, vendor_id,
                                  parseOCLVersion(device_version), Version(driver_major_version, driver_minor_version),
                                  global_mem_size, max_mem_alloc_size, local_mem_size, max_work_group_size,
-                                 max_clock_freq, max_compute_units,
+                                 max_clock_freq, max_compute_units, wavefront_size,
                                  platform, device_id,
                                  extensions_set));
 }

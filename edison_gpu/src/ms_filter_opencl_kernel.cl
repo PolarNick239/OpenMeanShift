@@ -2,6 +2,7 @@
 
 // Required defines:
 //#define WORKGROUP_SIZE 256
+//#define WAVEFRONT_SIZE 1
 ////#define N 1
 //#define N 3
 //#define EPSILON 0.01f
@@ -141,19 +142,21 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
             cache[threadY * (lN + 1) + k] = Mh[k];
         cache[threadY * (lN + 1) + lN] = wsuml;
 
-        barrier(CLK_LOCAL_MEM_FENCE);
-
         int step = WORKGROUP_SIZE / 2;
         while (step > 0) {
+            if (2 * step > WAVEFRONT_SIZE)
+                barrier(CLK_LOCAL_MEM_FENCE);
+
             if (threadY < step) {
-                for (int k = 0;  k < lN; ++k)
+                for (int k = 0; k < lN; ++k)
                     cache[threadY * (lN + 1) + k] += cache[(threadY + step) * (lN + 1) + k];
                 cache[threadY * (lN + 1) + lN] += cache[(threadY + step) * (lN + 1) + lN];
             }
 
             step /= 2;
-            barrier(CLK_LOCAL_MEM_FENCE);
         }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
 
         for (int k = 0; k < lN; ++k)
             Mh[k] = cache[thread0 * (lN + 1) + k];
@@ -265,10 +268,11 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
                 cache[threadY * (lN + 1) + k] = Mh[k];
             cache[threadY * (lN + 1) + lN] = wsuml;
 
-            barrier(CLK_LOCAL_MEM_FENCE);
-
             int step = WORKGROUP_SIZE / 2;
             while (step > 0) {
+                if (2 * step > WAVEFRONT_SIZE)
+                    barrier(CLK_LOCAL_MEM_FENCE);
+
                 if (threadY < step) {
                     for (int k = 0; k < lN; ++k)
                         cache[threadY * (lN + 1) + k] += cache[(threadY + step) * (lN + 1) + k];
@@ -276,8 +280,9 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
                 }
 
                 step /= 2;
-                barrier(CLK_LOCAL_MEM_FENCE);
             }
+
+            barrier(CLK_LOCAL_MEM_FENCE);
 
             for (int k = 0; k < lN; ++k)
                 Mh[k] = cache[thread0 * (lN + 1) + k];

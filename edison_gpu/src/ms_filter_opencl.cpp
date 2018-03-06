@@ -127,6 +127,7 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
     {
         std::string defines = std::string("")
                               + " -D WORKGROUP_SIZE=" + std::to_string(WORKGROUP_SIZE)
+                              + " -D WAVEFRONT_SIZE=" + std::to_string(engine->device->wavefront_size)
                               + " -D N=" + std::to_string(N)
                               + " -D EPSILON=" + std::to_string(EPSILON) + "f"
                               + " -D LIMIT=" + std::to_string(LIMIT);
