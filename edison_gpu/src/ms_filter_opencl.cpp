@@ -130,7 +130,10 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
                               + " -D WAVEFRONT_SIZE=" + std::to_string(engine->device->wavefront_size)
                               + " -D N=" + std::to_string(N)
                               + " -D EPSILON=" + std::to_string(EPSILON) + "f"
-                              + " -D LIMIT=" + std::to_string(LIMIT);
+                              + " -D LIMIT=" + std::to_string(LIMIT)
+                              + " -D sigmaS=" + std::to_string(sigmaS) + "f"
+                              + " -D sigmaR=" + std::to_string(sigmaR) + "f"
+        ;
         performance_timer timer;
         kernel = engine->compileKernel(mean_shift_kernel, mean_shift_kernel_length, "meanShiftFilter", defines.data());
         if (!kernel)
@@ -159,8 +162,6 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
         kernel->setArg(i++, sizeof(int),    &L);
         kernel->setArg(i++, sizeof(int),    &width);
         kernel->setArg(i++, sizeof(int),    &height);
-        kernel->setArg(i++, sizeof(float),  &sigmaS);
-        kernel->setArg(i++, sizeof(float),  &sigmaR);
         kernel->setArg(i++, sizeof(float),  &sMins);
         kernel->setArg(i++, sizeof(int),    &nBuck1);
         kernel->setArg(i++, sizeof(int),    &nBuck2);

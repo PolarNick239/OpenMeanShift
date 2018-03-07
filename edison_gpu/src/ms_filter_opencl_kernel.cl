@@ -1,12 +1,16 @@
 #line 2
 
-// Required defines:
-//#define WORKGROUP_SIZE 256
-//#define WAVEFRONT_SIZE 1
-////#define N 1
-//#define N 3
-//#define EPSILON 0.01f
-//#define LIMIT 100
+// Defines for static analyzer:
+#ifndef WORKGROUP_SIZE
+    #define WORKGROUP_SIZE 256
+    #define WAVEFRONT_SIZE 1
+    //#define N 1
+    #define N       3
+    #define EPSILON 0.01f
+    #define LIMIT   100
+    #define sigmaS  8.0f
+    #define sigmaR  5.0f
+#endif
 
 #define lN (N + 2)
 
@@ -33,6 +37,7 @@ inline int getBucNeigh(const int j, const int nBuck1, const int nBuck2)
 //    return bucNeigh[j];
 }
 
+__attribute__((reqd_work_group_size(1, WORKGROUP_SIZE, 1)))
 __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
                               __global const int*   buckets,   // nBuck1*nBuck2*nBuck3
                               __global const float* weightMap, // L
@@ -40,7 +45,6 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
                               __global       float* msRawData, // N*L
                               const int L,
                               const int width, const int height,
-                              const float sigmaS, const float sigmaR,
                               const float sMins,
                               const int nBuck1, const int nBuck2, const int nBuck3
 )
@@ -224,7 +228,9 @@ __kernel void meanShiftFilter(__global const float* sdata,     // lN*L
         barrier(CLK_LOCAL_MEM_FENCE);
 
         for (int j = threadY; j < IDXDS_MAX; j += WORKGROUP_SIZE) {
-            int idxd = idxds[j];
+            //int idxd = idxds[j]; // BUT THIS EQUAL LINE LEADS TO -2 VGPRs ON R9 390X:
+            int idxd = idxds[(j / 256) * 256 + j % 256];
+
             // list parse, crt point is cHeadList
             if (idxd != IDXDS_EMPTY) {
                 int idxs = lN * idxd;
