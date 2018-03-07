@@ -2123,6 +2123,34 @@ void msImageProcessor::Fill(int regionLoc, int label)
 /*        using the classification data structure.     */
 /*******************************************************/
 
+#define VANILLA_VERSION 0
+
+#if !VANILLA_VERSION
+#include <omp.h>
+#include <vector>
+
+// See https://stackoverflow.com/a/13328691/1549330
+int omp_thread_count()
+{
+	int n = 0;
+#pragma omp parallel reduction(+:n)
+	n += 1;
+	return n;
+}
+
+void connectNeighbours(std::vector<std::vector<int>>& neighbours, int labelA, int labelB)
+{
+	auto itA = std::lower_bound(neighbours[labelA].begin(), neighbours[labelA].end(), labelB);
+	if (itA == neighbours[labelA].end() || *itA != labelB) {
+		auto itB = std::lower_bound(neighbours[labelB].begin(), neighbours[labelB].end(), labelA);
+		assert (itB == neighbours[labelB].end() || *itB != labelA);
+
+		neighbours[labelA].insert(itA, labelB);
+		neighbours[labelB].insert(itB, labelA);
+	}
+}
+#endif // VANILLA_VERSION
+
 void msImageProcessor::BuildRAM( void )
 {
 
@@ -2158,6 +2186,26 @@ void msImageProcessor::BuildRAM( void )
 	//determining if a given region is adjacent
 	//to another
 	RAList	*raNode1, *raNode2, *oldRAFreeList;
+#if !VANILLA_VERSION
+	std::vector<std::vector<int>> total_neighbours(regionCount);
+	for (int labelA = 0; labelA < regionCount; ++labelA) {
+		total_neighbours[labelA].reserve(NODE_MULTIPLE);
+	}
+
+	const int omp_threads_count = omp_thread_count();
+	const int nlocks = omp_threads_count;
+	omp_lock_t locks[nlocks];
+	for (int i = 0; i < nlocks; ++i)
+		omp_init_lock(&(locks[i]));
+
+#pragma omp parallel
+	{
+		std::vector<std::vector<int>> neighbours(regionCount);
+		for (int labelA = 0; labelA < regionCount; ++labelA) {
+			neighbours[labelA].reserve(NODE_MULTIPLE);
+		}
+#pragma pragma omp for schedule(dynamic, 4)
+#endif
 	for(int i = 0; i < height - 1; i++)
 	{
 		//check the right and below neighbors
@@ -2175,6 +2223,9 @@ void msImageProcessor::BuildRAM( void )
 			//are adjacent to one another - update the RAM
 			if(curLabel != rightLabel)
 			{
+#if !VANILLA_VERSION
+				connectNeighbours(neighbours, curLabel, rightLabel);
+#else
 				//obtain RAList object from region adjacency free
 				//list
 				raNode1			= freeRAList;
@@ -2202,7 +2253,7 @@ void msImageProcessor::BuildRAM( void )
 				//free list
 				if(exists)
 					freeRAList = oldRAFreeList;
-
+#endif
 			}
 
 			//check below, if the label of
@@ -2211,6 +2262,9 @@ void msImageProcessor::BuildRAM( void )
 			//are adjacent to one another - update the RAM
 			if(curLabel != bottomLabel)
 			{
+#if !VANILLA_VERSION
+				connectNeighbours(neighbours, curLabel, bottomLabel);
+#else
 				//obtain RAList object from region adjacency free
 				//list
 				raNode1			= freeRAList;
@@ -2238,7 +2292,7 @@ void msImageProcessor::BuildRAM( void )
 				//free list
 				if(exists)
 					freeRAList = oldRAFreeList;
-
+#endif
 			}
 
 		}
@@ -2257,6 +2311,9 @@ void msImageProcessor::BuildRAM( void )
 		//are adjacent to one another - update the RAM
 		if(curLabel != bottomLabel)
 		{
+#if !VANILLA_VERSION
+			connectNeighbours(neighbours, curLabel, bottomLabel);
+#else
 			//obtain RAList object from region adjacency free
 			//list
 			raNode1			= freeRAList;
@@ -2284,7 +2341,7 @@ void msImageProcessor::BuildRAM( void )
 			//free list
 			if(exists)
 				freeRAList = oldRAFreeList;
-
+#endif
 		}
 	}
 
@@ -2292,6 +2349,9 @@ void msImageProcessor::BuildRAM( void )
 	//pixels...
 
 	//check the right for pixel locations whose x < width - 1
+#if !VANILLA_VERSION
+#pragma pragma omp for schedule(dynamic, 4)
+#endif
 	for(int j = 0; j < width - 1; j++)
 	{
 		//calculate pixel labels (i = height-1)
@@ -2305,6 +2365,9 @@ void msImageProcessor::BuildRAM( void )
 		//are adjacent to one another - update the RAM
 		if(curLabel != rightLabel)
 		{
+#if !VANILLA_VERSION
+			connectNeighbours(neighbours, curLabel, rightLabel);
+#else
 			//obtain RAList object from region adjacency free
 			//list
 			raNode1			= freeRAList;
@@ -2332,10 +2395,47 @@ void msImageProcessor::BuildRAM( void )
 			//free list
 			if(exists)
 				freeRAList = oldRAFreeList;
-
+#endif
 		}
 
 	}
+
+#if !VANILLA_VERSION
+		for (int offset = omp_get_thread_num(); offset < omp_get_thread_num() + omp_threads_count; ++offset) {
+			for (int labelA = offset % omp_threads_count; labelA < regionCount; labelA += omp_threads_count) {
+				omp_set_lock(&(locks[labelA % nlocks]));
+				for (int i = 0; i < neighbours[labelA].size(); ++i) {
+					int labelB = neighbours[labelA][i];
+					auto itA = std::lower_bound(total_neighbours[labelA].begin(), total_neighbours[labelA].end(), labelB);
+					if (itA == total_neighbours[labelA].end() || *itA != labelB) {
+						total_neighbours[labelA].insert(itA, labelB);
+					}
+				}
+				omp_unset_lock(&(locks[labelA % nlocks]));
+			}
+		}
+	}
+
+	for (int i = 0; i < nlocks; ++i) {
+		omp_destroy_lock(&(locks[i]));
+	}
+
+	for (int labelA = 0; labelA < regionCount; ++labelA) {
+		RAList* last = &(raList[labelA]);
+		for (int i = 0; i < total_neighbours[labelA].size(); ++i) {
+			int labelB = total_neighbours[labelA][i];
+
+			raNode2			= freeRAList;
+			freeRAList		= freeRAList->next;
+
+			raNode2->label	= labelB;
+			raNode2->next	= NULL;
+
+			last->next = raNode2;
+			last = raNode2;
+		}
+	}
+#endif
 
 	//done.
 	return;
