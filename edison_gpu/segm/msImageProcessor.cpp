@@ -2134,8 +2134,7 @@ void msImageProcessor::BuildRAM( void )
 	}
 
 	//initialize the region adjacency list
-	int i;
-	for(i = 0; i < regionCount; i++)
+	for(int i = 0; i < regionCount; i++)
 	{
 		raList[i].edgeStrength		= 0;
 		raList[i].edgePixelCount	= 0;
@@ -2145,7 +2144,7 @@ void msImageProcessor::BuildRAM( void )
 
 	//initialize RAM free list
 	freeRAList	= raPool;
-	for(i = 0; i < NODE_MULTIPLE*regionCount-1; i++)
+	for(int i = 0; i < NODE_MULTIPLE*regionCount-1; i++)
 	{
 		raPool[i].edgeStrength		= 0;
 		raPool[i].edgePixelCount	= 0;
@@ -2158,18 +2157,17 @@ void msImageProcessor::BuildRAM( void )
 	//and below the current pixel location thus
 	//determining if a given region is adjacent
 	//to another
-	int		j, curLabel, rightLabel, bottomLabel, exists;
 	RAList	*raNode1, *raNode2, *oldRAFreeList;
-	for(i = 0; i < height - 1; i++)
+	for(int i = 0; i < height - 1; i++)
 	{
 		//check the right and below neighbors
 		//for pixel locations whose x < width - 1
-		for(j = 0; j < width - 1; j++)
+		for(int j = 0; j < width - 1; j++)
 		{
 			//calculate pixel labels
-			curLabel	= labels[i*width+j    ];	//current pixel
-			rightLabel	= labels[i*width+j+1  ];	//right   pixel
-			bottomLabel	= labels[(i+1)*width+j];	//bottom  pixel
+			int curLabel	= labels[i*width+j    ];	//current pixel
+			int rightLabel	= labels[i*width+j+1  ];	//right   pixel
+			int bottomLabel	= labels[(i+1)*width+j];	//bottom  pixel
 
 			//check to the right, if the label of
 			//the right pixel is not the same as that
@@ -2195,7 +2193,7 @@ void msImageProcessor::BuildRAM( void )
 				raNode2->label	= rightLabel;
 
 				//insert nodes into the RAM
-				exists			= 0;
+				int exists		= 0;
 				raList[curLabel  ].Insert(raNode2);
 				exists			= raList[rightLabel].Insert(raNode1);
 
@@ -2231,7 +2229,7 @@ void msImageProcessor::BuildRAM( void )
 				raNode2->label	= bottomLabel;
 
 				//insert nodes into the RAM
-				exists			= 0;
+				int exists		= 0;
 				raList[curLabel  ].Insert(raNode2);
 				exists			= raList[bottomLabel].Insert(raNode1);
 
@@ -2249,8 +2247,9 @@ void msImageProcessor::BuildRAM( void )
 		//pixels...
 
 		//calculate pixel locations (j = width-1)
-		curLabel	= labels[i*width+j    ];	//current pixel
-		bottomLabel = labels[(i+1)*width+j];	//bottom  pixel
+		int j = width - 1;
+		int curLabel	= labels[i*width+j    ];	//current pixel
+		int bottomLabel = labels[(i+1)*width+j];	//bottom  pixel
 
 		//check below, if the label of
 		//the bottom pixel is not the same as that
@@ -2276,7 +2275,7 @@ void msImageProcessor::BuildRAM( void )
 			raNode2->label	= bottomLabel;
 			
 			//insert nodes into the RAM
-			exists			= 0;
+			int exists			= 0;
 			raList[curLabel  ].Insert(raNode2);
 			exists			= raList[bottomLabel].Insert(raNode1);
 			
@@ -2293,11 +2292,12 @@ void msImageProcessor::BuildRAM( void )
 	//pixels...
 
 	//check the right for pixel locations whose x < width - 1
-	for(j = 0; j < width - 1; j++)
+	for(int j = 0; j < width - 1; j++)
 	{
 		//calculate pixel labels (i = height-1)
-		curLabel	= labels[i*width+j    ];	//current pixel
-		rightLabel	= labels[i*width+j+1  ];	//right   pixel
+		int i = height - 1;
+		int curLabel	= labels[i*width+j    ];	//current pixel
+		int rightLabel	= labels[i*width+j+1  ];	//right   pixel
 		
 		//check to the right, if the label of
 		//the right pixel is not the same as that
@@ -2323,7 +2323,7 @@ void msImageProcessor::BuildRAM( void )
 			raNode2->label	= rightLabel;
 			
 			//insert nodes into the RAM
-			exists			= 0;
+			int exists			= 0;
 			raList[curLabel  ].Insert(raNode2);
 			exists			= raList[rightLabel].Insert(raNode1);
 			
