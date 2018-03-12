@@ -29,7 +29,7 @@ If you want to use multithreaded version insted of OpenCL version - replace [```
 | Input image              | HIGH_SPEEDUP (original EDISON)  | NO_SPEEDUP (original EDISON) |
 :-------------------------:|:-------------------------------:|:-----------------------------:
 ![Unicorn original](/data/unicorn_512.png?raw=true) | ![Unicorn HIGH_SPEEDUP](/data/high_speedup/unicorn_512_high.png?raw=true) | ![Unicorn NO_SPEEDUP](/data/no_speedup/unicorn_512_no.png?raw=true)
-![2K texture original](/data/eastern_tower_2048.jpg) | ![2K texture HIGH_SPEEDUP](/data/high_speedup/eastern_tower_2048_high.jpg?raw=true) | ![2K texture NO_SPEEDUP](/data/no_speedup/eastern_tower_2048_no.jpg?raw=true)
+![2K texture original](/data/eastern_tower_2048.jpg?raw=true) | ![2K texture HIGH_SPEEDUP](/data/high_speedup/eastern_tower_2048_high.jpg?raw=true) | ![2K texture NO_SPEEDUP](/data/no_speedup/eastern_tower_2048_no.jpg?raw=true)
 
 # Benchmarking
 Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
