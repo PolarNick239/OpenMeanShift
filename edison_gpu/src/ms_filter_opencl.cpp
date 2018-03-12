@@ -103,7 +103,7 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
     }
     // done indexing/hashing
 
-    int WORKGROUP_SIZE = 256;
+    int WORKGROUP_SIZE = 128;
 
     if (!cl::initOpenCL()) {
         throw std::runtime_error("OpenCL initialization failed!");
@@ -178,7 +178,7 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
 
         performance_timer timer;
 
-        int limit = (16 * 1024 * 1024 + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
+        int limit = 64 * 1024;
         for (int offset = 0; offset < L; offset += limit) {
             globalWorkOffset[0] = offset;
             globalWorkOffset[1] = 0;
