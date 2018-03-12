@@ -41,7 +41,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><b>= Total</b></td>
   </tr>
   <tr>
-    <td>Method></td>
+    <td>Method</td>
     <td>Device</td>
     <td>Time</td>
     <td>Method</td>
