@@ -25,12 +25,14 @@ add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} clew)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
+add_executable(hexdumparray src/utils/hexdumparray.cpp)
+
 function(convertIntoHeader sourceFile headerFile arrayName)
     add_custom_command(
             OUTPUT ${PROJECT_SOURCE_DIR}/${headerFile}
 
-            COMMAND xxd -ps ${PROJECT_SOURCE_DIR}/${sourceFile} | fold -w2 | paste -sd' '| sed -e 's/ /, 0x/g' | printf \"0x$$\(cat -\)\" | fold -w120 | printf \"\#include <cstddef>\\n\\nstatic const char ${arrayName}[] = {\\n$$\(cat -\)}\$<SEMICOLON>\\n\\nsize_t ${arrayName}_length = sizeof\(${arrayName}\) / sizeof\(unsigned char\)$<SEMICOLON>\\n\" > ${PROJECT_SOURCE_DIR}/${headerFile}
+            COMMAND hexdumparray ${PROJECT_SOURCE_DIR}/${sourceFile} ${PROJECT_SOURCE_DIR}/${headerFile} ${arrayName}
 
-            DEPENDS ${PROJECT_SOURCE_DIR}/${sourceFile}
+            DEPENDS ${PROJECT_SOURCE_DIR}/${sourceFile} hexdumparray
     )
 endfunction()
