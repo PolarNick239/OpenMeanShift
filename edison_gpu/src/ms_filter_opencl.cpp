@@ -5,8 +5,40 @@
 
 #include "ms_filter_opencl_kernel_cl.h"
 
-void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
+void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR,
+                                                 float* msRawDataRes, std::queue<std::pair<size_t, size_t>>* workQueue, std::mutex* queueLock, std::vector<std::pair<size_t, size_t>>* workProcessed,
+                                                 cl::Device_ptr device)
 {
+    int WORKGROUP_SIZE = 128;
+
+    std::queue<std::pair<size_t, size_t>> tmpQueue;
+    std::vector<std::pair<size_t, size_t>> tmpWorkProcessed;
+    std::mutex tmpMutex;
+
+    if (msRawDataRes == nullptr && workQueue == nullptr && queueLock == nullptr && workProcessed == nullptr && !device) {
+        msRawDataRes = msRawData;
+        workQueue = &tmpQueue;
+        queueLock = &tmpMutex;
+        workProcessed = &tmpWorkProcessed;
+        tmpQueue.push(std::pair<int, int>(0, L));
+
+        if (!cl::initOpenCL()) {
+            throw std::runtime_error("OpenCL initialization failed!");
+        }
+
+        device = cl::getGPUDevice();
+        if (!device) {
+            device = cl::getCPUDevice();
+            if (!device) {
+                throw std::runtime_error("No OpenCL devices!");
+            }
+            verbose_cout << "Using platform: " << device->platform->name << std::endl;
+            WORKGROUP_SIZE = std::max(32, (int) device->max_compute_units * 4);
+        }
+        verbose_cout << "Using device: " << device->name << " with " << device->max_compute_units
+                     << " max compute units" << std::endl;
+    }
+
     //make sure that a lattice height and width have
     //been defined...
     if (!height) {
@@ -103,23 +135,7 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
     }
     // done indexing/hashing
 
-    int WORKGROUP_SIZE = 128;
-
-    if (!cl::initOpenCL()) {
-        throw std::runtime_error("OpenCL initialization failed!");
-    }
-
-    cl::Engine_ptr engine = cl::createGPUEngine();
-    if (!engine) {
-        engine = cl::createCPUEngine();
-        if (!engine) {
-            throw std::runtime_error("No OpenCL devices!");
-        }
-        verbose_cout << "Using platform: " << engine->device->platform->name << std::endl;
-        WORKGROUP_SIZE = std::max(32, (int) engine->device->max_compute_units * 4);
-    }
-    verbose_cout << "Using device: " << engine->device->name << " with " << engine->device->max_compute_units
-                 << " max compute units" << std::endl;
+    cl::Engine_ptr engine(new cl::Engine(device));
     engine->init();
 
     cl::Kernel_ptr kernel;
@@ -179,12 +195,28 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
         performance_timer timer;
 
         int limit = 64 * 1024;
-        for (int offset = 0; offset < L; offset += limit) {
-            globalWorkOffset[0] = offset;
-            globalWorkOffset[1] = 0;
-            globalWorkSize[0] = std::min(L - offset, limit);
-            globalWorkSize[1] = WORKGROUP_SIZE;
-            engine->enqueueKernel(kernel, 2, globalWorkSize, localWorkSize, globalWorkOffset);
+        while (true)
+        {
+            int workFrom;
+            int workTo;
+            {
+                std::lock_guard<std::mutex> guard(*queueLock);
+                if (workQueue->size() == 0) {
+                    break;
+                }
+                auto work = workQueue->front();
+                workFrom = work.first;
+                workTo = work.second;
+                workProcessed->push_back(work);
+                workQueue->pop();
+            }
+            for (int offset = workFrom; offset < workTo; offset += limit) {
+                globalWorkOffset[0] = offset;
+                globalWorkOffset[1] = 0;
+                globalWorkSize[0] = std::min(L - offset, limit);
+                globalWorkSize[1] = WORKGROUP_SIZE;
+                engine->enqueueKernel(kernel, 2, globalWorkSize, localWorkSize, globalWorkOffset);
+            }
         }
         engine->finish();
 
@@ -193,6 +225,6 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR)
 
     performance_timer timer;
     verbose_cout << "Fetching result data..." << std::endl;
-    engine->readBuffer(buf_msRawData, N * L * sizeof(cl_float), msRawData);
+    engine->readBuffer(buf_msRawData, N * L * sizeof(cl_float), msRawDataRes);
     verbose_cout << "Results retrieved in " << timer.elapsed() << " s!" << std::endl;
 }

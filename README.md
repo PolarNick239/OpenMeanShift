@@ -2,10 +2,11 @@
 Speeded up version of Mean Shift segmentation based on implemetation in [EDISON system](http://coewww.rutgers.edu/riul/research/code/EDISON/).
 
 Two new speedups implemented:
- - [Multhreaded](/edison_gpu/segm/tdef.h#L49) version for multicore CPUs
- - [OpenCL](/edison_gpu/segm/tdef.h#L50) version for GPUs
+ - [Multhreaded](/edison_gpu/segm/tdef.h#L49) version for multicore CPU
+ - [OpenCL](/edison_gpu/segm/tdef.h#L50) version for GPU
+ - [AUTO](/edison_gpu/segm/tdef.h#L51) version for workload distribution between all GPUs and CPU 
  
-Results of mean shift segmentation with both versions are very close to results of [NO_SPEEDUP](/edison_gpu/segm/tdef.h#L46) implemetation in EDISON system (difference is negligible and caused by floating point error).
+Results of mean shift segmentation with all versions are very close to results of [NO_SPEEDUP](/edison_gpu/segm/tdef.h#L46) implemetation in EDISON system (difference is negligible and caused by floating point error).
 
 Also regions fusion algorithm speeded up: linked lists replaced with vectors + multithreaded approach. 
 
@@ -23,7 +24,7 @@ make -j4
 segmentation_demo/segmentation_demo ../data/unicorn_512.png unicorn_segmentation.jpg
 ```
 
-If you want to use multithreaded version insted of OpenCL version - replace [```GPU_SPEEDUP```](/segmentation_demo/src/main.cpp#L26) with ```MULTITHREADED_SPEEDUP```.
+If you want to use CPU-only or single GPU version instead of auto distributing between all GPUs and CPU - replace [```AUTO_SPEEDUP```](/segmentation_demo/src/main.cpp#L26) with ```MULTITHREADED_SPEEDUP``` or ```GPU_SPEEDUP```.
 
 # Example results
 | Input image              | HIGH_SPEEDUP (original EDISON)  | NO_SPEEDUP (original EDISON) |

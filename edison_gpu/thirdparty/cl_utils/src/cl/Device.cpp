@@ -106,6 +106,34 @@ Device_ptr cl::createDevice(Platform_ptr platform, cl_device_id device_id) {
                                  extensions_set));
 }
 
+Device_ptr cl::getGPUDevice() {
+    Device_ptr best_device;
+    auto platforms = getPlatforms();
+    for (auto platform : platforms) {
+        auto devices = getDevices(platform, GPU_DEVICE);
+        for (auto device : devices) {
+            if (!best_device || device->max_compute_units > best_device->max_compute_units) {
+                best_device = device;
+            }
+        }
+    }
+    return best_device;
+}
+
+Device_ptr cl::getCPUDevice() {
+    Device_ptr best_device;
+    auto platforms = getPlatforms();
+    for (auto platform : platforms) {
+        auto devices = getDevices(platform, CPU_DEVICE);
+        for (auto device : devices) {
+            if (!best_device || device->max_compute_units > best_device->max_compute_units) {
+                best_device = device;
+            }
+        }
+    }
+    return best_device;
+}
+
 void Device::printInfo() const {
     std::cout << "Platform: " << platform->name << " " << platform->vendor << std::endl;
     std::cout << "Device:   " << name << " " << vendor << " OpenCL " << device_version.majorVersion << "." << device_version.minorVersion;

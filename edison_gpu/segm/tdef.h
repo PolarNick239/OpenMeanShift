@@ -48,6 +48,8 @@ enum SpeedUpLevel	{
     HIGH_SPEEDUP,
     MULTITHREADED_SPEEDUP, // Multithreaded version of NO_SPEEDUP (results are strictly equal)
     GPU_SPEEDUP,           // OpenCL GPU    version of NO_SPEEDUP (results are nearly equal to NO_SPEEDUP except minor results diffs due to float/double precision)
+    AUTO_SPEEDUP,          // GPU + CPU     version of NO_SPEEDUP (results are nearly equal to NO_SPEEDUP except minor results diffs due to float/double precision)
+                           // workload distributed between all GPUs (using GPU_SPEEDUP) and CPU (using MULTITHREADED_SPEEDUP)
 };
 
 // Error Handler

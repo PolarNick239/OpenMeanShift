@@ -62,6 +62,9 @@ namespace cl {
 
     typedef std::shared_ptr<Device> Device_ptr;
 
+    Device_ptr getGPUDevice();
+    Device_ptr getCPUDevice();
+
     std::vector<Device_ptr> getDevices(Platform_ptr platform, DeviceType deviceTypeMask=ALL_TYPES);
     Device_ptr createDevice(Platform_ptr platform, cl_device_id device_id);
 

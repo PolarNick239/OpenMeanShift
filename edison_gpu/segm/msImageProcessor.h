@@ -50,6 +50,16 @@ Implemented by Chris M. Christoudias, Bogdan Georgescu
 //region pruning and transitive closure
 #include	"RAList.h"
 
+#include	<queue>
+#include	<mutex>
+#include	<cstddef>
+#include	<memory>
+
+namespace cl {
+	class Device;
+	typedef std::shared_ptr<Device> Device_ptr;
+}
+
 //define constants
 
 	//image pruning
@@ -634,8 +644,16 @@ private:
 											// Disadvantage	: time expensive
    void NewNonOptimizedFilter(float, float);
 
-	void NewNonOptimizedFilter_omp(float, float); // Multithreaded version of NewNonOptimizedFilter
-	void NewNonOptimizedFilter_gpu(float, float); // OpenCL version of NewNonOptimizedFilter (the only difference is that calculations done in float, but not in double)
+	// Multithreaded version of NewNonOptimizedFilter
+	void NewNonOptimizedFilter_omp(float sigmaS, float sigmaR,
+								   float* msRawDataRes=nullptr, std::queue<std::pair<size_t, size_t>>* workQueue=nullptr, std::mutex* queueLock=nullptr, std::vector<std::pair<size_t, size_t>>* workProcessed=nullptr);
+
+	// OpenCL version of NewNonOptimizedFilter (the only difference is that calculations done in float, but not in double)
+	void NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR,
+								   float* msRawDataRes=nullptr, std::queue<std::pair<size_t, size_t>>* workQueue=nullptr, std::mutex* queueLock=nullptr, std::vector<std::pair<size_t, size_t>>* workProcessed=nullptr, cl::Device_ptr device=cl::Device_ptr());
+
+	// Workload distributed between all GPUs (GPU_SPEEDUP) and CPU (MULTITHREADED_SPEEDUP) (results are nearly equal to NO_SPEEDUP except minor results diffs due to float/double precision)
+	void NewNonOptimizedFilter_auto(float sigmaS, float sigmaR);
 
 	void OptimizedFilter1(float, float);	// filters the image using previous mode information
 											// to avoid re-applying mean shift to some data points

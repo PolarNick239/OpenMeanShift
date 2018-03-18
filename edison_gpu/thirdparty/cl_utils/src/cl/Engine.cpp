@@ -118,16 +118,7 @@ void Engine::finish() const {
 }
 
 Engine_ptr cl::createGPUEngine() {
-    Device_ptr best_device;
-    auto platforms = getPlatforms();
-    for (auto platform : platforms) {
-        auto devices = getDevices(platform, GPU_DEVICE);
-        for (auto device : devices) {
-            if (!best_device || device->max_compute_units < best_device->max_compute_units) {
-                best_device = device;
-            }
-        }
-    }
+    Device_ptr best_device = cl::getGPUDevice();
     if (best_device) {
         return Engine_ptr(new Engine(best_device));
     } else {
@@ -136,16 +127,7 @@ Engine_ptr cl::createGPUEngine() {
 }
 
 Engine_ptr cl::createCPUEngine() {
-    Device_ptr best_device;
-    auto platforms = getPlatforms();
-    for (auto platform : platforms) {
-        auto devices = getDevices(platform, CPU_DEVICE);
-        for (auto device : devices) {
-            if (!best_device || device->max_compute_units > best_device->max_compute_units) {
-                best_device = device;
-            }
-        }
-    }
+    Device_ptr best_device = cl::getCPUDevice();
     if (best_device) {
         return Engine_ptr(new Engine(best_device));
     } else {

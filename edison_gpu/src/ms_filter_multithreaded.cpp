@@ -4,8 +4,20 @@
 
 typedef double real_type;
 
-void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
+void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR,
+                                                 float* msRawDataRes, std::queue<std::pair<size_t, size_t>>* workQueue, std::mutex* queueLock, std::vector<std::pair<size_t, size_t>>* workProcessed)
 {
+	std::queue<std::pair<size_t, size_t>> tmpQueue;
+	std::vector<std::pair<size_t, size_t>> tmpWorkProcessed;
+	std::mutex tmpMutex;
+
+	if (msRawDataRes == nullptr && workQueue == nullptr && queueLock == nullptr && workProcessed == nullptr) {
+		msRawDataRes = msRawData;
+		workQueue = &tmpQueue;
+		queueLock = &tmpMutex;
+		workProcessed = &tmpWorkProcessed;
+		tmpQueue.push(std::pair<int, int>(0, L));
+	}
 
 	//make sure that a lattice height and width have
 	//been defined...
@@ -132,8 +144,23 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 #endif
 #endif
 
+	while (true)
+	{
+		int workFrom;
+		int workTo;
+		{
+			std::lock_guard<std::mutex> guard(*queueLock);
+			if (workQueue->size() == 0) {
+				break;
+			}
+			auto work = workQueue->front();
+			workFrom = work.first;
+			workTo = work.second;
+			workProcessed->push_back(work);
+			workQueue->pop();
+		}
 	#pragma omp parallel for schedule(dynamic, 4)
-	for(int i = 0; i < L; i++)
+	for(int i = workFrom; i < workTo; i++)
 	{
 		int idxs, idxd;
 		int j, k;
@@ -326,7 +353,7 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 		
 		//store result into msRawData...
 		for(j = 0; j < N; j++)
-			msRawData[N*i+j] = (float)(yk[j+2]*sigmaR);
+			msRawDataRes[N*i+j] = (float)(yk[j+2]*sigmaR);
 
 		// Prompt user on progress
 #ifdef SHOW_PROGRESS
@@ -339,6 +366,7 @@ void msImageProcessor::NewNonOptimizedFilter_omp(float sigmaS, float sigmaR)
 		if((i%PROGRESS_RATE == 0)&&((ErrorStatus = msSys.Progress((float)(i/(float)(L))*(float)(0.8)))) == EL_HALT)
 			break;
 #endif
+	}
 	}
 	
 	// Prompt user that filtering is completed
