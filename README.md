@@ -10,7 +10,7 @@ Results of mean shift segmentation with all versions are very close to results o
 
 Also regions fusion algorithm speeded up: linked lists replaced with vectors + multithreaded approach. 
 
-To enable original version of regions fusion you can replace [```VANILLA_VERSION 0```](/edison_gpu/segm/msImageProcessor.cpp#L2126) with ```VANILLA_VERSION 1```.
+To enable original version of regions fusion you can replace [```VANILLA_VERSION 0```](/edison_gpu/segm/msImageProcessor.cpp#L2130) with ```VANILLA_VERSION 1```.
 
 # How to use
 ```
@@ -54,7 +54,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L48>HIGH_SPEEDUP</a></td>
     <td>i7 6700</td>
     <td>136 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=1</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=1</a></td>
     <td>i7 6700</td>
     <td>21 s</td>
     <td>157 s</td>
@@ -63,7 +63,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L48>HIGH_SPEEDUP</a></td>
     <td>i7 5960X</td>
     <td>370 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=1</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=1</a></td>
     <td>i7 5960X</td>
     <td>32 s</td>
     <td>402 s</td>
@@ -72,7 +72,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L46>NO_SPEEDUP</a></td>
     <td>i7 6700</td>
     <td>145 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=1</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=1</a></td>
     <td>i7 6700</td>
     <td>7.3 s</td>
     <td>152 s</td>
@@ -81,7 +81,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L46>NO_SPEEDUP</a></td>
     <td>i7 5960X</td>
     <td>161 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=1</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=1</a></td>
     <td>i7 5960X</td>
     <td>10 s</td>
     <td>171 s</td>
@@ -90,7 +90,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L46>NO_SPEEDUP</a></td>
     <td>i7 6700</td>
     <td>145 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 6700</td>
     <td>2.0 s</td>
     <td>147 s</td>
@@ -99,7 +99,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>Original <a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L46>NO_SPEEDUP</a></td>
     <td>i7 5960X</td>
     <td>161 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 5960X</td>
     <td>2.0 s</td>
     <td>163 s</td>
@@ -108,7 +108,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L49>MULTITHREADED_SPEEDUP</a></td>
     <td>i7 6700</td>
     <td>50 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 6700</td>
     <td>2.0 s</td>
     <td><b>52 s</b></td>
@@ -117,7 +117,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L49>MULTITHREADED_SPEEDUP</a></td>
     <td>i7 5960X</td>
     <td>22 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 5960X</td>
     <td>2.0 s</td>
     <td><b>24 s</b></td>
@@ -126,7 +126,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L50>GPU_SPEEDUP</a></td>
     <td>Titan X (Maxwell)</td>
     <td>6.8 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 5960X</td>
     <td>2.0 s</td>
     <td><b>8.8 s</b></td>
@@ -135,7 +135,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L50>GPU_SPEEDUP</a></td>
     <td>R9 390X</td>
     <td>6.3 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 6700</td>
     <td>2.0 s</td>
     <td><b>8.3 s</b></td>
@@ -144,7 +144,7 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L50>GPU_SPEEDUP</a></td>
     <td>GTX 1080</td>
     <td>4.0 s</td>
-    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2126>VANILLA_VERSION=0</a></td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
     <td>i7 5960X</td>
     <td>2.0 s</td>
     <td><b>6.0 s</b></td>
