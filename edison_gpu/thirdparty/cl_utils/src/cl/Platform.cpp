@@ -1,6 +1,7 @@
 #include "cl/Platform.h"
 
 #include <sstream>
+#include <algorithm>
 
 #define CHECKED_NULL(call) if (!OK(call)) return nullptr;
 

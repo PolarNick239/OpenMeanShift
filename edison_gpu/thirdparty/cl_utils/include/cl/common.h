@@ -1,6 +1,7 @@
 #pragma once
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#define clew_STATIC
 #include "clew.h"
 
 #include <string>

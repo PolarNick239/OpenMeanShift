@@ -1,6 +1,7 @@
 #include "cl/Device.h"
 
 #include <sstream>
+#include <algorithm>
 
 using namespace cl;
 using std::vector;

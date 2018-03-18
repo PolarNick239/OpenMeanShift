@@ -2198,7 +2198,7 @@ void msImageProcessor::BuildRAM( void )
 
 	const int omp_threads_count = omp_thread_count();
 	const int nlocks = omp_threads_count;
-	omp_lock_t locks[nlocks];
+	std::vector<omp_lock_t> locks(nlocks);
 	for (int i = 0; i < nlocks; ++i)
 		omp_init_lock(&(locks[i]));
 

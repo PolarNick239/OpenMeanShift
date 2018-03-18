@@ -24,6 +24,8 @@ make -j4
 segmentation_demo/segmentation_demo ../data/unicorn_512.png unicorn_segmentation.jpg
 ```
 
+Please note that to read and write ```jpg``` files you may need to install [ImageMagick](https://www.imagemagick.org/script/download.php) (OpenMeanShift uses CImg that relies on ImageMagick for ```jpg```).
+
 If you want to use CPU-only or single GPU version instead of auto distributing between all GPUs and CPU - replace [```AUTO_SPEEDUP```](/segmentation_demo/src/main.cpp#L26) with ```MULTITHREADED_SPEEDUP``` or ```GPU_SPEEDUP```.
 
 # Example results

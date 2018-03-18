@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstddef>
 #include <cassert>
+#include <string>
 
 namespace cimg_library {
     template<typename T>
