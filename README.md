@@ -24,7 +24,7 @@ make -j4
 segmentation_demo/segmentation_demo ../data/unicorn_512.png unicorn_segmentation.jpg
 ```
 
-Please note that to read and write ```jpg``` files you may need to install [ImageMagick](https://www.imagemagick.org/script/download.php) (OpenMeanShift uses CImg that relies on ImageMagick for ```jpg```).
+Please note that to read and write ```jpg``` files you may need to install [ImageMagick](https://www.imagemagick.org/script/download.php) (OpenMeanShift uses CImg that relies on ImageMagick for ```jpg```). On Ubuntu you can install it via ```sudo apt install imagemagick```. 
 
 If you want to use CPU-only or single GPU version instead of auto distributing between all GPUs and CPU - replace [```AUTO_SPEEDUP```](/segmentation_demo/src/main.cpp#L26) with ```MULTITHREADED_SPEEDUP``` or ```GPU_SPEEDUP```.
 
@@ -150,6 +150,15 @@ Benchmarking done for 2048x2048 RGB [image](/data/eastern_tower_2048.jpg):
     <td>i7 5960X</td>
     <td>2.0 s</td>
     <td><b>6.0 s</b></td>
+  </tr>
+  <tr>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/tdef.h#L50>GPU_SPEEDUP</a></td>
+    <td>V100</td>
+    <td>1.7 s</td>
+    <td><a href=https://github.com/PolarNick239/OpenMeanShift/blob/master/edison_gpu/segm/msImageProcessor.cpp#L2130>VANILLA_VERSION=0</a></td>
+    <td>8 vCPU</td>
+    <td>2.6 s</td>
+    <td><b>4.3 s</b></td>
   </tr>
 </table>
 
