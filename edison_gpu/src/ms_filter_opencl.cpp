@@ -195,6 +195,9 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR,
         performance_timer timer;
 
         int limit = 64 * 1024;
+
+        cl_event event_prev_launch = NULL;
+
         while (true)
         {
             int workFrom;
@@ -215,7 +218,14 @@ void msImageProcessor::NewNonOptimizedFilter_gpu(float sigmaS, float sigmaR,
                 globalWorkOffset[1] = 0;
                 globalWorkSize[0] = std::min(L - offset, limit);
                 globalWorkSize[1] = WORKGROUP_SIZE;
-                engine->enqueueKernel(kernel, 2, globalWorkSize, localWorkSize, globalWorkOffset);
+
+                cl_event event_cur_launch = NULL;
+                engine->enqueueKernel(kernel, 2, globalWorkSize, localWorkSize, globalWorkOffset, &event_cur_launch);
+                if (event_prev_launch != NULL) {
+                    engine->waitForEvents(1, &event_prev_launch);
+                }
+
+                event_prev_launch = event_cur_launch;
             }
         }
         engine->finish();

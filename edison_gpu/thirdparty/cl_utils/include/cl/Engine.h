@@ -24,10 +24,12 @@ namespace cl {
         cl_mem createBuffer(size_t size, cl_mem_flags flags=CL_MEM_READ_WRITE) const;
         void deallocateBuffer(cl_mem buffer) const;
 
-        void enqueueKernel(Kernel_ptr kernel, unsigned int workDim, const size_t* globalWorkSize, const size_t* localWorkSize, const size_t* globalWorkOffset=NULL) const;
+        void enqueueKernel(Kernel_ptr kernel, unsigned int workDim, const size_t* globalWorkSize, const size_t* localWorkSize, const size_t* globalWorkOffset=NULL, cl_event* event=NULL, const cl_event* waitList=NULL, cl_uint numEventsInWaitList=0) const;
 
         void writeBuffer(cl_mem buffer, size_t size, const void* ptr) const;
         void readBuffer(cl_mem buffer, size_t size, void* ptr) const;
+
+        void waitForEvents(cl_uint numEvents, const cl_event *eventList) const;
 
         void finish() const;
 

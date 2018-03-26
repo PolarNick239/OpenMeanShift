@@ -101,8 +101,8 @@ void Engine::deallocateBuffer(cl_mem buffer) const {
     CHECKED(clReleaseMemObject(buffer));
 }
 
-void Engine::enqueueKernel(Kernel_ptr kernel, unsigned int workDim, const size_t* globalWorkSize, const size_t* localWorkSize, const size_t* globalWorkOffset) const {
-    CHECKED(clEnqueueNDRangeKernel(queue, kernel->kernel(), workDim, globalWorkOffset, globalWorkSize, localWorkSize, 0, NULL, NULL));
+void Engine::enqueueKernel(Kernel_ptr kernel, unsigned int workDim, const size_t* globalWorkSize, const size_t* localWorkSize, const size_t* globalWorkOffset, cl_event* event, const cl_event* waitList, cl_uint numEventsInWaitList) const {
+    CHECKED(clEnqueueNDRangeKernel(queue, kernel->kernel(), workDim, globalWorkOffset, globalWorkSize, localWorkSize, numEventsInWaitList, waitList, event));
 }
 
 void Engine::writeBuffer(cl_mem buffer, size_t size, const void* ptr) const {
@@ -111,6 +111,10 @@ void Engine::writeBuffer(cl_mem buffer, size_t size, const void* ptr) const {
 
 void Engine::readBuffer(cl_mem buffer, size_t size, void* ptr) const {
     CHECKED(clEnqueueReadBuffer(queue, buffer, CL_TRUE, 0, size, ptr, 0, NULL, NULL));
+}
+
+void Engine::waitForEvents(cl_uint numEvents, const cl_event *eventList) const {
+    CHECKED(clWaitForEvents(numEvents, eventList));
 }
 
 void Engine::finish() const {
