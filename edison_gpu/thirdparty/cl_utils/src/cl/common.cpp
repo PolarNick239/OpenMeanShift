@@ -156,27 +156,34 @@ std::string cl::getErrorString(cl_int errorCode) {
 }
 
 cl::Version cl::parseOCLVersion(std::string version) {
-    int major_version = -1;
-    int minor_version = -1;
     std::string version_info;
+    std::string platform_info;
 
     //OpenCL<space><major_version.minor_version><space><platform-specific information>
-    std::stringstream ss(version);
-    std::string item;
-    int item_i = 0;
-    unsigned int offset = 0;
-    while (getline(ss, item, ' ')) {
-        offset += item.length() + 1;
-        if (item_i == 1) {
-            major_version = atoi(item.data());
-        } else if (item_i == 2) {
-            minor_version = atoi(item.data());
-            break;
+    {
+        std::stringstream ss(version);
+        std::string item;
+        int item_i = 0;
+        unsigned int offset = 0;
+        while (getline(ss, item, ' ')) {
+            if (item_i == 0) {
+                // OpenCL
+            } else if (item_i == 1) {
+                // <major_version.minor_version>
+                version_info = item;
+            } else if (item_i == 2) {
+                // <platform-specific information>
+                platform_info = version.substr(offset);
+            }
+            offset += item.length() + 1;
+            item_i++;
         }
-        item_i++;
-        version_info = version.substr(offset);
     }
-    return cl::Version(major_version, minor_version, version_info);
+
+    int major_version = atoi(version_info.data());
+    int minor_version = atoi(version_info.data() + version_info.find('.') + 1);
+
+    return cl::Version(major_version, minor_version, platform_info);
 }
 
 bool cl::Version::operator<(Version other) const  {
