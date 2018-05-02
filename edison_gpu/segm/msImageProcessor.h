@@ -627,6 +627,8 @@ public:
 
   int GetRegions(int**, float**, int**);
 
+  int *labels;
+
 
   void SetSpeedThreshold(float);
 private:
@@ -770,7 +772,8 @@ private:
 											// to the location of the data point on the lattice
 
 	////////Data Modes////////
-	int				*labels;				// assigns a label to each data point associating it to
+	// labels moved to public
+	//int			*labels;				// assigns a label to each data point associating it to
 											// a mode in modes (e.g. a data point having label l has
 											// mode modes[l])
 

@@ -62,6 +62,17 @@ int main(int argc, char **argv)
         }
     }
 
+    /*
+    // This code demonstrates how to check label of each pixel:
+    std::cout << "Regions regions number: " << regions.getPixelLabelsNumber() << std::endl;
+    for (size_t j = 0; j < image.height; ++j) {
+        for (size_t i = 0; i < image.width; ++i) {
+            int c = regions.getPixelLabels()[j * image.width + i] % 3;
+            imageWithBorders(j, i, c) = 255;
+        }
+    }
+    */
+
     if (endsWith(outputFilename, ".jpg") || endsWith(outputFilename, ".jpeg")) {
         imageWithBorders.saveJPEG(outputFilename);
     } else if (endsWith(outputFilename, ".png")) {

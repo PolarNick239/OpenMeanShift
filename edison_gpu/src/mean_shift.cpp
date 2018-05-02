@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <iostream>
 
-void SegmentedRegions::init(size_t width, size_t height, const RegionList &regionList)
+void SegmentedRegions::init(size_t width, size_t height, const RegionList &regionList, const int* labels)
 {
     this->width = width;
     this->height = height;
@@ -21,6 +21,15 @@ void SegmentedRegions::init(size_t width, size_t height, const RegionList &regio
             borders[i][j] = p;
         }
     }
+
+    nlabels = 0;
+    pixelsLabels.resize(height * width);
+    for (ptrdiff_t j = 0; j < height; ++j) {
+        for (ptrdiff_t i = 0; i < width; ++i) {
+            pixelsLabels[j * width + i] = labels[j * width + i];
+            nlabels = std::max(nlabels, labels[j * width + i] + 1);
+        }
+    }
 }
 
 size_t SegmentedRegions::getNumRegions()
@@ -31,6 +40,16 @@ size_t SegmentedRegions::getNumRegions()
 std::vector<PixelPosition> SegmentedRegions::getRegionBorder(size_t regionIndex)
 {
     return borders[regionIndex];
+}
+
+const std::vector<int>& SegmentedRegions::getPixelLabels()
+{
+    return pixelsLabels;
+}
+
+int SegmentedRegions::getPixelLabelsNumber()
+{
+    return nlabels;
 }
 
 SegmentedRegions meanShiftSegmentation(const unsigned char *data, int width, int height, int nChannels,
@@ -66,6 +85,6 @@ SegmentedRegions meanShiftSegmentation(const unsigned char *data, int width, int
     }
 
     SegmentedRegions regions;
-    regions.init(width, height, *processor.GetBoundaries());
+    regions.init(width, height, *processor.GetBoundaries(), (const int *) processor.labels);
     return regions;
 }
