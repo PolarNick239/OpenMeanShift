@@ -129,6 +129,21 @@ Image<T> Image<T>::reshape(size_t width, size_t height, size_t cn) {
 }
 
 template<typename T>
+Image<T> Image<T>::getCrop(size_t offsetRow, size_t offsetCol, size_t height, size_t width) {
+    assert (offsetRow + height <= this->height && offsetCol + width <= this->width);
+
+    Image<T> part(width, height, this->cn);
+    for (size_t y = offsetRow; y < offsetRow + height; y++) {
+        for (size_t x = offsetCol; x < offsetCol + width; x++) {
+            for (size_t c = 0; c < this->cn; c++) {
+               part(y - offsetRow, x - offsetCol, c) = this->operator()(y, x, c);
+            }
+        }
+    }
+    return part;
+}
+
+template<typename T>
 Image<T> Image<T>::removeAlphaChannel() {
     assert(cn == 4);
 

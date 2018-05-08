@@ -81,6 +81,7 @@ namespace images {
         Image copy() const;
         Image<T>& operator=(const Image<T>& that) = default;
         Image<T> reshape(size_t width, size_t height, size_t cn);
+        Image<T> getCrop(size_t offsetRow, size_t offsetCol, size_t height, size_t width);
         Image<T> removeAlphaChannel();
 
         Image<T> resize(size_t width, size_t height=0);
